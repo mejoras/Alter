@@ -90,9 +90,14 @@ public class Alter {
 
 				List<String> writeLines = new ArrayList<String>();
 				for (String line : readLines) {
-					if ("handlers= java.util.logging.FileHandler".equals(line)) {
+					if (line.startsWith("handlers")
+							&& line.contains("FileHandler")) {
 						writeLines
 								.add("handlers= java.util.logging.FileHandler, java.util.logging.ConsoleHandler");
+					} else if (line.startsWith("handlers")
+							&& line.contains("GZipFileHandler")) {
+						writeLines
+								.add("handlers=com.indra.davinci.common.log.GZipFileHandler, java.util.logging.ConsoleHandler");
 					} else {
 						writeLines.add(line);
 					}
@@ -176,7 +181,8 @@ public class Alter {
 					line, "${");
 			for (int i = 0; i < splitByWholeSeparator.length; i++) {
 				String nextElement = splitByWholeSeparator[i];
-				if (nextElement.contains("}") && splitByWholeSeparator.length>1) {
+				if (nextElement.contains("}")
+						&& splitByWholeSeparator.length > 1) {
 					String var = nextElement.substring(0,
 							nextElement.indexOf("}"));
 					patterns.add(var);
