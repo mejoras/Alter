@@ -1,0 +1,10 @@
+1.- Crear una "External Tool Configurations" de tipo "Program"
+2.- Location (Ejemplo):
+	D:\Software\Herramientitas\Alter\Alter.bat
+3.- Arguments (Ejemplo)
+	${workspace_loc}\_configuration_repo_server
+	${workspace_loc}\_configuration_gen_SGC_SERVER
+	${workspace_loc}\_my_replacements/replacements_server/replacements.properties
+
+	//La primera ruta será hasta el nivel del config
+	//La segunda ruta será donde se creará la carpeta config
