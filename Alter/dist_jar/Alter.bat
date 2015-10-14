@@ -1,1 +1,1 @@
-"%JAVA_HOME%\bin\java" -jar Alter.jar %1 %2 %3
+"%JAVA_HOME%\bin\java" -jar %~dp0Alter.jar %1 %2 %3
