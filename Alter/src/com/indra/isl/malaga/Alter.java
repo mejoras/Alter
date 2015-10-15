@@ -14,7 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 
 /**
  * Clase principal de la aplicación
- * 
+ *
  * @author ajifernandez
  *
  */
@@ -44,10 +44,8 @@ public class Alter {
 				FileUtils.deleteDirectory(configTargetFile);
 
 				// Copiar datos de configuración a configTarget
-				FileUtils.copyDirectory(new File(configSource),
-						configTargetFile);
-				Iterator<File> iterateFiles = FileUtils.iterateFiles(
-						configTargetFile, extensions, true);
+				FileUtils.copyDirectory(new File(configSource), configTargetFile);
+				Iterator<File> iterateFiles = FileUtils.iterateFiles(configTargetFile, extensions, true);
 				while (iterateFiles.hasNext()) {
 					File file = iterateFiles.next();
 					System.out.println(file.getName());
@@ -70,34 +68,27 @@ public class Alter {
 				File loggingFile = null;
 				try {
 					// Servidor
-					loggingFile = FileUtils.getFile(configTarget + CONFIG
-							+ "/logging.properties");
+					loggingFile = FileUtils.getFile(configTarget + CONFIG + "/logging.properties");
 					readLines = FileUtils.readLines(loggingFile);
 				} catch (FileNotFoundException e) {
-					loggingFile = FileUtils.getFile(configTarget + CONFIG
-							+ "/log/log.properties");
+					loggingFile = FileUtils.getFile(configTarget + CONFIG + "/log/log.properties");
 				}
 
 				try {
 					// cliente
-					loggingFile = FileUtils.getFile(configTarget + CONFIG
-							+ "/log/log.properties");
+					loggingFile = FileUtils.getFile(configTarget + CONFIG + "/log/log.properties");
 					readLines = FileUtils.readLines(loggingFile);
 				} catch (FileNotFoundException e) {
-					loggingFile = FileUtils.getFile(configTarget + CONFIG
-							+ "/logging.properties");
+					loggingFile = FileUtils.getFile(configTarget + CONFIG + "/logging.properties");
 				}
 
 				List<String> writeLines = new ArrayList<String>();
 				for (String line : readLines) {
-					if (line.startsWith("handlers")
-							&& line.contains("FileHandler")) {
+					if (line.startsWith("handlers") && line.contains("logging.FileHandler")) {
+						writeLines.add("handlers= java.util.logging.FileHandler, java.util.logging.ConsoleHandler");
+					} else if (line.startsWith("handlers") && line.contains("GZipFileHandler")) {
 						writeLines
-								.add("handlers= java.util.logging.FileHandler, java.util.logging.ConsoleHandler");
-					} else if (line.startsWith("handlers")
-							&& line.contains("GZipFileHandler")) {
-						writeLines
-								.add("handlers=com.indra.davinci.common.log.GZipFileHandler, java.util.logging.ConsoleHandler");
+							.add("handlers=com.indra.davinci.common.log.GZipFileHandler, java.util.logging.ConsoleHandler");
 					} else {
 						writeLines.add(line);
 					}
@@ -113,8 +104,7 @@ public class Alter {
 			System.out.println("##########################");
 			System.out.println("Claves que sobran");
 			if (replacementUsedMap.keySet().size() == 0) {
-				System.out
-						.println("Enhorabuena, no te sobran claves en el replacements");
+				System.out.println("Enhorabuena, no te sobran claves en el replacements");
 			} else {
 				for (String key : replacementUsedMap.keySet()) {
 					System.out.println(key);
@@ -124,24 +114,22 @@ public class Alter {
 			System.err.println("Número de argumentos inválidos Alter");
 			System.err.println("args[0] = configuration_repo_server");
 			System.err.println("args[1] = _configuration_gen_SGC_SERVER");
-			System.err
-					.println("args[2] = _my_replacements/replacements_server/replacements.properties");
+			System.err.println("args[2] = _my_replacements/replacements_server/replacements.properties");
 		}
 	}
 
 	/**
 	 * Realiza el reemplazo de los replacements
-	 * 
+	 *
 	 * @param file
 	 * @param line
 	 * @param replacementMap
 	 */
-	private static String replace(File file, String line,
-			Map<String, String> replacementMap) {
+	private static String replace(File file, String line, Map<String, String> replacementMap) {
 
 		// System.out.println("ct:"+configTarget);
-		String routeName = new String(file.getAbsolutePath()
-				.replace(configTarget, "").replace("\\", ".").replace("/", "."));
+		String routeName = new String(file.getAbsolutePath().replace(configTarget, "").replace("\\", ".")
+			.replace("/", "."));
 		// System.out.println("rn:"+routeName);
 		if (routeName.startsWith(".")) {
 			routeName = routeName.substring(1);
@@ -158,9 +146,8 @@ public class Alter {
 				line = line.replace("${" + pattern + "}", realValue);
 				replacementUsedMap.remove(completRouteName);
 			} else {
-				System.err.println("No hay reemplazo para la variable "
-						+ pattern + "\n en el fichero "
-						+ file.getAbsolutePath());
+				System.err.println("No hay reemplazo para la variable " + pattern + "\n en el fichero "
+					+ file.getAbsolutePath());
 			}
 		}
 
@@ -169,7 +156,7 @@ public class Alter {
 
 	/**
 	 * Obtenemos los patrones de la línea
-	 * 
+	 *
 	 * @param line
 	 * @return
 	 */
@@ -177,14 +164,11 @@ public class Alter {
 		List<String> patterns = new ArrayList<String>();
 
 		if (!"};".equals(line)) {
-			String[] splitByWholeSeparator = StringUtils.splitByWholeSeparator(
-					line, "${");
+			String[] splitByWholeSeparator = StringUtils.splitByWholeSeparator(line, "${");
 			for (int i = 0; i < splitByWholeSeparator.length; i++) {
 				String nextElement = splitByWholeSeparator[i];
-				if (nextElement.contains("}")
-						&& splitByWholeSeparator.length > 1) {
-					String var = nextElement.substring(0,
-							nextElement.indexOf("}"));
+				if (nextElement.contains("}") && splitByWholeSeparator.length > 1) {
+					String var = nextElement.substring(0, nextElement.indexOf("}"));
 					patterns.add(var);
 				}
 			}
@@ -194,22 +178,19 @@ public class Alter {
 
 	/**
 	 * Obtenemos el mapa de replacements
-	 * 
+	 *
 	 * @param replacementSource
 	 * @return
 	 */
-	private static Map<String, String> getReplacementMap(
-			String replacementSource) {
+	private static Map<String, String> getReplacementMap(String replacementSource) {
 		Map<String, String> replacementMap = new HashMap<String, String>();
 
 		try {
-			List<String> readLines = FileUtils.readLines(new File(
-					replacementSource));
+			List<String> readLines = FileUtils.readLines(new File(replacementSource));
 			for (String line : readLines) {
 				if (!line.startsWith("#") && !"".equals(line)) {
 					String[] lineSplit = line.split("=");
-					replacementMap.put(lineSplit[0],
-							lineSplit.length > 1 ? lineSplit[1] : "");
+					replacementMap.put(lineSplit[0], lineSplit.length > 1 ? lineSplit[1] : "");
 				}
 			}
 
