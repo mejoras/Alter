@@ -1,13 +1,16 @@
 package com.indra.isl.malaga;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -44,8 +47,10 @@ public class Alter {
 				FileUtils.deleteDirectory(configTargetFile);
 
 				// Copiar datos de configuración a configTarget
-				FileUtils.copyDirectory(new File(configSource), configTargetFile);
-				Iterator<File> iterateFiles = FileUtils.iterateFiles(configTargetFile, extensions, true);
+				FileUtils.copyDirectory(new File(configSource),
+						configTargetFile);
+				Iterator<File> iterateFiles = FileUtils.iterateFiles(
+						configTargetFile, extensions, true);
 				while (iterateFiles.hasNext()) {
 					File file = iterateFiles.next();
 					System.out.println(file.getName());
@@ -68,27 +73,34 @@ public class Alter {
 				File loggingFile = null;
 				try {
 					// Servidor
-					loggingFile = FileUtils.getFile(configTarget + CONFIG + "/logging.properties");
+					loggingFile = FileUtils.getFile(configTarget + CONFIG
+							+ "/logging.properties");
 					readLines = FileUtils.readLines(loggingFile);
 				} catch (FileNotFoundException e) {
-					loggingFile = FileUtils.getFile(configTarget + CONFIG + "/log/log.properties");
+					loggingFile = FileUtils.getFile(configTarget + CONFIG
+							+ "/log/log.properties");
 				}
 
 				try {
 					// cliente
-					loggingFile = FileUtils.getFile(configTarget + CONFIG + "/log/log.properties");
+					loggingFile = FileUtils.getFile(configTarget + CONFIG
+							+ "/log/log.properties");
 					readLines = FileUtils.readLines(loggingFile);
 				} catch (FileNotFoundException e) {
-					loggingFile = FileUtils.getFile(configTarget + CONFIG + "/logging.properties");
+					loggingFile = FileUtils.getFile(configTarget + CONFIG
+							+ "/logging.properties");
 				}
 
 				List<String> writeLines = new ArrayList<String>();
 				for (String line : readLines) {
-					if (line.startsWith("handlers") && line.contains("logging.FileHandler")) {
-						writeLines.add("handlers= java.util.logging.FileHandler, java.util.logging.ConsoleHandler");
-					} else if (line.startsWith("handlers") && line.contains("GZipFileHandler")) {
+					if (line.startsWith("handlers")
+							&& line.contains("FileHandler")) {
 						writeLines
-							.add("handlers=com.indra.davinci.common.log.GZipFileHandler, java.util.logging.ConsoleHandler");
+								.add("handlers= java.util.logging.FileHandler, java.util.logging.ConsoleHandler");
+					} else if (line.startsWith("handlers")
+							&& line.contains("GZipFileHandler")) {
+						writeLines
+								.add("handlers=com.indra.davinci.common.log.GZipFileHandler, java.util.logging.ConsoleHandler");
 					} else {
 						writeLines.add(line);
 					}
@@ -104,7 +116,8 @@ public class Alter {
 			System.out.println("##########################");
 			System.out.println("Claves que sobran");
 			if (replacementUsedMap.keySet().size() == 0) {
-				System.out.println("Enhorabuena, no te sobran claves en el replacements");
+				System.out
+						.println("Enhorabuena, no te sobran claves en el replacements");
 			} else {
 				for (String key : replacementUsedMap.keySet()) {
 					System.out.println(key);
@@ -114,7 +127,8 @@ public class Alter {
 			System.err.println("Número de argumentos inválidos Alter");
 			System.err.println("args[0] = configuration_repo_server");
 			System.err.println("args[1] = _configuration_gen_SGC_SERVER");
-			System.err.println("args[2] = _my_replacements/replacements_server/replacements.properties");
+			System.err
+					.println("args[2] = _my_replacements/replacements_server/replacements.properties");
 		}
 	}
 
@@ -125,11 +139,12 @@ public class Alter {
 	 * @param line
 	 * @param replacementMap
 	 */
-	private static String replace(File file, String line, Map<String, String> replacementMap) {
+	private static String replace(File file, String line,
+			Map<String, String> replacementMap) {
 
 		// System.out.println("ct:"+configTarget);
-		String routeName = new String(file.getAbsolutePath().replace(configTarget, "").replace("\\", ".")
-			.replace("/", "."));
+		String routeName = new String(file.getAbsolutePath()
+				.replace(configTarget, "").replace("\\", ".").replace("/", "."));
 		// System.out.println("rn:"+routeName);
 		if (routeName.startsWith(".")) {
 			routeName = routeName.substring(1);
@@ -140,15 +155,44 @@ public class Alter {
 		List<String> patterns = getPatterns(line);
 		for (String pattern : patterns) {
 			String completRouteName = routeName + "." + pattern;
-
 			String realValue = replacementMap.get(completRouteName);
+			//Si la pattern es de tipo .txt se sustituye realValue con el contenido del fichero
+			//que especifica el mismo realValue
+			if (pattern.toUpperCase().contains(".TXT")){
+				if (realValue != null){
+					//realValue contains the ABSOLUTE file route!
+					File fileReplace = new File(realValue);
+				    StringBuilder fileContents = new StringBuilder((int)fileReplace.length());
+				    Scanner scanner = null;
+				    try {
+					    scanner = new Scanner((Readable) new BufferedReader(new FileReader(fileReplace)));
+					    String lineSeparator = System.getProperty("line.separator");
+
+				        while(scanner.hasNextLine()) {
+				            fileContents.append(scanner.nextLine() + lineSeparator);
+				        }
+
+				        realValue = fileContents.toString();
+
+				    } catch (FileNotFoundException e) {
+				    	System.err.println("Error en la lectura del fichero pattern: "
+								+ pattern + "\n valor: "
+								+ realValue);
+					} finally {
+				        scanner.close();
+				    }
+				}
+			}
+
 			if (realValue != null) {
 				line = line.replace("${" + pattern + "}", realValue);
 				replacementUsedMap.remove(completRouteName);
 			} else {
-				System.err.println("No hay reemplazo para la variable " + pattern + "\n en el fichero "
-					+ file.getAbsolutePath());
+				System.err.println("No hay reemplazo para la variable "
+						+ pattern + "\n en el fichero "
+						+ file.getAbsolutePath());
 			}
+
 		}
 
 		return line;
@@ -164,11 +208,14 @@ public class Alter {
 		List<String> patterns = new ArrayList<String>();
 
 		if (!"};".equals(line)) {
-			String[] splitByWholeSeparator = StringUtils.splitByWholeSeparator(line, "${");
+			String[] splitByWholeSeparator = StringUtils.splitByWholeSeparator(
+					line, "${");
 			for (int i = 0; i < splitByWholeSeparator.length; i++) {
 				String nextElement = splitByWholeSeparator[i];
-				if (nextElement.contains("}") && splitByWholeSeparator.length > 1) {
-					String var = nextElement.substring(0, nextElement.indexOf("}"));
+				if (nextElement.contains("}")
+						&& splitByWholeSeparator.length > 1) {
+					String var = nextElement.substring(0,
+							nextElement.indexOf("}"));
 					patterns.add(var);
 				}
 			}
@@ -182,15 +229,18 @@ public class Alter {
 	 * @param replacementSource
 	 * @return
 	 */
-	private static Map<String, String> getReplacementMap(String replacementSource) {
+	private static Map<String, String> getReplacementMap(
+			String replacementSource) {
 		Map<String, String> replacementMap = new HashMap<String, String>();
 
 		try {
-			List<String> readLines = FileUtils.readLines(new File(replacementSource));
+			List<String> readLines = FileUtils.readLines(new File(
+					replacementSource));
 			for (String line : readLines) {
 				if (!line.startsWith("#") && !"".equals(line)) {
 					String[] lineSplit = line.split("=");
-					replacementMap.put(lineSplit[0], lineSplit.length > 1 ? lineSplit[1] : "");
+					replacementMap.put(lineSplit[0],
+							lineSplit.length > 1 ? lineSplit[1] : "");
 				}
 			}
 
